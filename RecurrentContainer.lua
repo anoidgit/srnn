@@ -103,19 +103,12 @@ function RecurrentContainer:evaluate()
 end
 
 function RecurrentContainer:reset()
-	self.fwd_step = 1
-	self.upi_Step = 1
-	self.acg_Step = 1
-	self.inputs = {}
-	self.gradOutputs = {}
-	self.forwarded = false
-	self.backwarded = true
+	self:resetStep()
 	parent.reset(self)
 end
 
 function RecurrentContainer:clearState()
-	self.nets = {}
-	self.fwd_step = 1
+	self:resetStep()
 	return parent.clearState(self)
 end
 
@@ -123,6 +116,10 @@ function RecurrentContainer:resetStep()
 	self.fwd_step = 1
 	self.ugi_step = 1
 	self.acg_step = 1
+	self.inputs = {}
+	self.gradOutputs = {}
+	self.forwarded = false
+	self.backwarded = true
 end
 
 function RecurrentContainer:resetFWDStep()
