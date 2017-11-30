@@ -2,7 +2,7 @@ require('torch')
 require('nn')
 require('nngraph')
 
-srnn = {} -- define the global lenn table
+srnn = {} -- define the global srnn table
 
 require('srnn.ValueMinus')
 
