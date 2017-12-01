@@ -19,4 +19,6 @@ require('srnn.StepLSTMP')
 require('srnn.StepVanillaLSTM')
 require('srnn.StepGRU')
 
+require('srnn.Sequencer')
+
 return srnn

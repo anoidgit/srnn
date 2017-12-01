@@ -15,7 +15,12 @@ end
 function RecurrentContainer:updateOutput(input)
 	self:prepareForward(input)
 	local _input = self:getInput(self.fwd_step, input)
-	self.output = self:net(self.fwd_step):updateOutput(_input)[self.nlayer]
+	local real_output = self:net(self.fwd_step):updateOutput(_input)
+	if torch.isTensor(real_output) then
+		self.output = real_output
+	else
+		self.output = real_output[self.nlayer]
+	end
 	self.fwd_step = self.fwd_step + 1
 	self.forwarded = true
 	return self.output

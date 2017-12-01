@@ -3,8 +3,9 @@ local SequenceContainer, parent = torch.class('srnn.SequenceContainer', 'nn.Cont
 function SequenceContainer:__init(module, shareModule)
 	parent.__init(self)
 	self.network = module
-	self.network:training()
 	self:add(module)
+	self:clearState()
+	self:training()
 	self.shareModule = shareModule
 end
 
@@ -126,7 +127,7 @@ local function sharedClone(module, shareParams, shareGradParams, SequencePointer
 		local sequencerContainers = {}
 
 		module:apply(function(m)
-			if torch.isTypeOf(m, 'nn.SequenceContainer') and m.syncstep then
+			if torch.isTypeOf(m, 'srnn.SequenceContainer') and m.syncstep then
 				table.insert(sequencerContainers, m)
 			end
 		end)
@@ -134,7 +135,7 @@ local function sharedClone(module, shareParams, shareGradParams, SequencePointer
 		if #sequencerModules > 0 then
 			local curid = 1
 			clone:apply(function(m)
-				if torch.isTypeOf(m, 'nn.SequenceContainer') and m.syncstep then
+				if torch.isTypeOf(m, 'srnn.SequenceContainer') and m.syncstep then
 					m = sequencerContainers[curid]
 					curid = curid + 1
 				end

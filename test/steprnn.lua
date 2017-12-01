@@ -12,25 +12,25 @@ function test(bsize, isize, osize, nlayer, nstep)
 	for _, v in ipairs(id) do
 		print("Step:".._)
 		print("tmod forward step:"..tmod.fwd_step)
-		tmod:forward(v)
+		print(tmod:forward(v):size())
 	end
 	tmod:training()
 	for _, v in ipairs(id) do
 		print("Step:".._)
 		print("tmod forward step:"..tmod.fwd_step)
-		tmod:forward(v)
+		print(tmod:forward(v):size())
 	end
 	for _ = #id, 1, -1 do
-		tmod:backward(id[_], gd[_])
+		print(tmod:backward(id[_], gd[_]):size())
 		print("tmod next backward step:"..tmod.ugi_step)
 	end
 	for _, v in ipairs(id) do
 		print("Step:".._)
 		print("tmod forward step:"..tmod.fwd_step)
-		tmod:forward(v)
+		print(tmod:forward(v):size())
 	end
 	for _ = #id, 1, -1 do
-		tmod:updateGradInput(id[_], gd[_])
+		print(tmod:updateGradInput(id[_], gd[_]):size())
 		print("tmod next updateGradInput step:"..tmod.ugi_step)
 	end
 	for _ = #id, 1, -1 do
