@@ -1,6 +1,6 @@
 local Sequencer, parent = torch.class('srnn.Sequencer', 'nn.Container')
 
-function Sequencer:__init(module, outputSize, stepClone, reverseSeq, transferMod)
+function Sequencer:__init(module, outputSize, stepClone, reverseSeq, transferMod, resetStepEva)
 	parent.__init(self)
 	self.outputSize = outputSize
 	self.stepClone = ((stepClone == nil) and (not torch.isTypeOf(module, 'srnn.SequenceContainer'))) and true or stepClone
@@ -12,6 +12,9 @@ function Sequencer:__init(module, outputSize, stepClone, reverseSeq, transferMod
 		self.network = module
 	end
 	self:add(module)
+	if self.network.resetStep then
+		self.resetStepEva = (resetStepEva == nil) and true or resetStepEva
+	end
 	self:training()
 end
 
@@ -168,6 +171,9 @@ function Sequencer:prepareSelf(input)
 		if self.train then
 			self.gradInput = {}
 		end
+	end
+	if self.resetStepEva and (not self.train) then
+		self.network:resetStep()
 	end
 end
 

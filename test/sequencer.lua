@@ -10,7 +10,9 @@ function test(bsize, isize, osize, nlayer, nstep, rs, tsfm)
 	local tmod_core=srnn.StepRNN(isize, osize, nlayer)
 	local tmod=srnn.Sequencer(tmod_core, osize, nil, rs, tsfm)
 	tmod:evaluate()
-	tmod:forward(id)
+	for i = 1, 3 do
+		tmod:forward(id)
+	end
 	tmod:training()
 	tmod:forward(id)
 	tmod:backward(id, gd)
