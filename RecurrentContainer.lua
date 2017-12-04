@@ -117,14 +117,14 @@ function RecurrentContainer:clearState()
 	return parent.clearState(self)
 end
 
-function RecurrentContainer:resetStep()
+function RecurrentContainer:resetStep(fwd, bwd)
 	self.fwd_step = 1
 	self.ugi_step = 1
 	self.acg_step = 1
 	self.inputs = {}
 	self.gradOutputs = {}
-	self.forwarded = false
-	self.backwarded = true
+	self.forwarded = (fwd == nil) and false or fwd
+	self.backwarded = (bwd == nil) and true or bwd
 end
 
 function RecurrentContainer:resetFWDStep()

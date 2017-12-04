@@ -11,9 +11,7 @@ function AbstractRecurrentCell:prepareForward(input)
 		local bsize = input:size(1)
 		reset_Table(self.gradOutputLast, bsize, self.outputSize)
 		reset_Table(self.gradCellLast, bsize, self.outputSize)
-		self.gradOutputs = {}
-		self.inputs = {}
-		self.backwarded = false
+		self:resetStep(true, false)
 	end
 end
 
@@ -140,7 +138,7 @@ function AbstractRecurrentCell:setStepGradCellAdd(gradToAdd, step, layer)
 	end
 end
 
-function AbstractRecurrentCell:resetStep()
+function AbstractRecurrentCell:resetStep(...)
 	self.gradOutputAdd = {}
-	parent.resetStep(self)
+	parent.resetStep(self, ...)
 end

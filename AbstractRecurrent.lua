@@ -10,9 +10,7 @@ function AbstractRecurrent:prepareForward(input)
 	if self.train and self.backwarded then
 		local bsize = input:size(1)
 		reset_Table(self.gradOutputLast, bsize, self.outputSize)
-		self.gradOutputs = {}
-		self.inputs = {}
-		self.backwarded = false
+		self:resetStep(true, false)
 	end
 end
 
@@ -125,7 +123,7 @@ function AbstractRecurrent:setStepGradOutputAdd(gradToAdd, step, layer)
 	end
 end
 
-function AbstractRecurrent:resetStep()
+function AbstractRecurrent:resetStep(...)
 	self.gradOutputAdd = {}
-	parent.resetStep(self)
+	parent.resetStep(self, ...)
 end
