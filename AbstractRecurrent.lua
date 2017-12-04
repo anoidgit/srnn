@@ -89,6 +89,13 @@ function AbstractRecurrent:getGradOutput(step, gradOutput, lastStep)
 				if gradOutput then
 					_gradOutput[self.nlayer]:add(gradOutput)
 				end
+				-- apply extra gradient if there is any
+				if self.gradOutputAdd[step] then
+					for _, grad in ipairs(self.gradOutputAdd[step]) do
+						_gradOutput[_]:add(grad)
+					end
+					self.gradOutputAdd[step] = nil
+				end
 			end
 			self.gradOutputs[step] = _gradOutput
 			return _gradOutput
@@ -101,4 +108,24 @@ function AbstractRecurrent:getGradOutput(step, gradOutput, lastStep)
 	else
 		return rs
 	end
+end
+
+function AbstractRecurrent:getStepOutput(step, layer)
+	return self:net(step).output[layer or self.nlayer]
+end
+
+function AbstractRecurrent:setStepGradOutputAdd(gradToAdd, step, layer)
+	if not self.gradOutputAdd[step] then
+		self.gradOutputAdd[step] = {}
+	end
+	if self.gradOutputAdd[step][layer or self.nlayer] then
+		self.gradOutputAdd[step][layer or self.nlayer]:add(gradToAdd)
+	else
+		self.gradOutputAdd[step][layer or self.nlayer] = gradToAdd
+	end
+end
+
+function AbstractRecurrent:resetStep()
+	self.gradOutputAdd = {}
+	parent.resetStep(self)
 end

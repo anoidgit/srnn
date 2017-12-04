@@ -97,8 +97,50 @@ function AbstractRecurrentCell:getGradOutput(step, gradOutput, lastStep)
 			if gradOutput then
 				_gradOutput[self.nlayer]:add(gradOutput)
 			end
+			-- apply extra gradient if there is any
+			if self.gradOutputAdd[step] then
+				for _, grad in ipairs(self.gradOutputAdd[step]) do
+					_gradOutput[_]:add(grad)
+				end
+				self.gradOutputAdd[step] = nil
+			end
 		end
 		self.gradOutputs[step] = _gradOutput
 		return _gradOutput
 	end
+end
+
+function AbstractRecurrentCell:getStepOutput(step, layer)
+	return self:net(step).output[layer or self.nlayer]
+end
+
+function AbstractRecurrentCell:setStepGradOutputAdd(gradToAdd, step, layer)
+	if not self.gradOutputAdd[step] then
+		self.gradOutputAdd[step] = {}
+	end
+	if self.gradOutputAdd[step][layer or self.nlayer] then
+		self.gradOutputAdd[step][layer or self.nlayer]:add(gradToAdd)
+	else
+		self.gradOutputAdd[step][layer or self.nlayer] = gradToAdd
+	end
+end
+
+function AbstractRecurrentCell:getStepCell(step, layer)
+	return self:net(step).output[self.nlayer + (layer or self.nlayer)]
+end
+
+function AbstractRecurrentCell:setStepGradCellAdd(gradToAdd, step, layer)
+	if not self.gradOutputAdd[step] then
+		self.gradOutputAdd[step] = {}
+	end
+	if self.gradOutputAdd[step][self.nlayer + (layer or self.nlayer)] then
+		self.gradOutputAdd[step][self.nlayer + (layer or self.nlayer)]:add(gradToAdd)
+	else
+		self.gradOutputAdd[step][self.nlayer + (layer or self.nlayer)] = gradToAdd
+	end
+end
+
+function AbstractRecurrentCell:resetStep()
+	self.gradOutputAdd = {}
+	parent.resetStep(self)
 end
