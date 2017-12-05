@@ -6,3 +6,4 @@ FIND_PACKAGE(Torch REQUIRED)
 FILE(GLOB luasrc *.lua)
 
 ADD_TORCH_PACKAGE(srnn "" "${luasrc}")
+INSTALL(DIRECTORY "units" DESTINATION "${Torch_INSTALL_LUA_PATH_SUBDIR}/srnn")

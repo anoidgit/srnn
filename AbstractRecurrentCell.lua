@@ -6,11 +6,29 @@ function AbstractRecurrentCell:prepareForward(input)
 			unit:resize(bsize, osize):zero()
 		end
 	end
+	local function pair_reset_Table(tableStd, tableSet, clear)
+		for _, unit in pairs(tableStd) do
+			if not tableSet[_] then
+				tableSet[_] = unit.new()
+			end
+			tableSet[_]:resizeAs(unit):zero()
+		end
+		if clear then
+			for _, unit in pairs(tableSet) do
+				if not tableStd[_] then
+					tableSet[_] = nil
+				end
+			end
+		end
+	end
 	-- if it is the first step, reset gradients for this process
 	if self.train and self.backwarded then
 		local bsize = input:size(1)
 		reset_Table(self.gradOutputLast, bsize, self.outputSize)
 		reset_Table(self.gradCellLast, bsize, self.outputSize)
+		if #self.initStates > 1 then
+			pair_reset_Table(self.initStates, self.gradInitStates)
+		end
 		self:resetStep(true, false)
 	end
 end
@@ -60,7 +78,7 @@ function AbstractRecurrentCell:getInput(step, input)
 		else
 			local batchsize = input:size(1)
 			for _ = 1, self.nlayer * 2 do
-				table.insert(_input, self.initStateStorage.weight[_]:reshape(1, self.outputSize):expand(batchsize, self.outputSize))
+				table.insert(_input, self.initStates[_] or self.initStateStorage.weight[_]:reshape(1, self.outputSize):expand(batchsize, self.outputSize))
 			end
 		end
 		if self.train then
@@ -108,21 +126,6 @@ function AbstractRecurrentCell:getGradOutput(step, gradOutput, lastStep)
 	end
 end
 
-function AbstractRecurrentCell:getStepOutput(step, layer)
-	return self:net(step).output[layer or self.nlayer]
-end
-
-function AbstractRecurrentCell:setStepGradOutputAdd(gradToAdd, step, layer)
-	if not self.gradOutputAdd[step] then
-		self.gradOutputAdd[step] = {}
-	end
-	if self.gradOutputAdd[step][layer or self.nlayer] then
-		self.gradOutputAdd[step][layer or self.nlayer]:add(gradToAdd)
-	else
-		self.gradOutputAdd[step][layer or self.nlayer] = gradToAdd
-	end
-end
-
 function AbstractRecurrentCell:getStepCell(step, layer)
 	return self:net(step).output[self.nlayer + (layer or self.nlayer)]
 end
@@ -138,7 +141,10 @@ function AbstractRecurrentCell:setStepGradCellAdd(gradToAdd, step, layer)
 	end
 end
 
-function AbstractRecurrentCell:resetStep(...)
-	self.gradOutputAdd = {}
-	parent.resetStep(self, ...)
+function AbstractRecurrentCell:setLayerInitCellState(statein, layer)
+	self.initStates[self.nlayer + (layer or self.nlayer)] = statein
+end
+
+function AbstractRecurrentCell:getLayerGradInitCellState(layer)
+	return self.gradInitStates[self.nlayer + (layer or self.nlayer)]
 end

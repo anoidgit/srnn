@@ -58,12 +58,17 @@ function RecurrentContainer:accGradParameters(input, gradOutput, scale)
 	local _input = self:getInput(self.acg_step, input)
 	local _gradOutput = self:getGradOutput(self.acg_step, gradOutput, lastStep)
 	self:net(self.acg_step):accGradParameters(_input, _gradOutput, scale)
-	if (self.acg_step == 1) and self.updateInit then
+	if (self.acg_step == 1) and ((#self.initStates > 0) or self.updateInit) then
 		for _, unit in ipairs(self:net(1).gradInput) do
 			if _ > 1 then
-				self.initStateStorage.gradWeight[_ - 1]:add(unit:sum(1))
+				if self.initStates[_ - 1] then
+					self.gradInitStates[_ - 1]:add(unit)
+				elseif self.updateInit then
+					self.initStateStorage.gradWeight[_ - 1]:add(unit:sum(1))
+				end
 			end
 		end
+		self.initStates = {}
 	end
 	if self.acg_step > 1 then
 		self.acg_step = self.acg_step - 1
@@ -83,12 +88,17 @@ function RecurrentContainer:backward(input, gradOutput, scale)
 	local _input = self:getInput(self.acg_step, input)
 	local _gradOutput = self:getGradOutput(self.acg_step, gradOutput, lastStep)
 	self.gradInput = self:net(self.acg_step):backward(_input, _gradOutput, scale)[1]
-	if (self.acg_step == 1) and self.updateInit then
+	if (self.acg_step == 1) and ((#self.initStates > 0) or self.updateInit) then
 		for _, unit in ipairs(self:net(1).gradInput) do
 			if _ > 1 then
-				self.initStateStorage.gradWeight[_ - 1]:add(unit:sum(1))
+				if self.initStates[_ - 1] then
+					self.gradInitStates[_ - 1]:add(unit)
+				elseif self.updateInit then
+					self.initStateStorage.gradWeight[_ - 1]:add(unit:sum(1))
+				end
 			end
 		end
+		self.initStates = {}
 	end
 	if self.acg_step > 1 then
 		self.acg_step = self.acg_step - 1
@@ -113,16 +123,21 @@ function RecurrentContainer:reset()
 end
 
 function RecurrentContainer:clearState()
-	self:resetStep()
+	self:resetStep(nil, nil, true)
 	return parent.clearState(self)
 end
 
-function RecurrentContainer:resetStep(fwd, bwd)
+function RecurrentContainer:resetStep(fwd, bwd, clearInitStates)
 	self.fwd_step = 1
 	self.ugi_step = 1
 	self.acg_step = 1
 	self.inputs = {}
 	self.gradOutputs = {}
+	self.gradOutputAdd = {}
+	if (clearInitStates == nil) and false or clearInitStates then
+		self.initStates = {}
+	end
+	self.gradInitStates = {}
 	self.forwarded = (fwd == nil) and false or fwd
 	self.backwarded = (bwd == nil) and true or bwd
 end
@@ -149,4 +164,35 @@ end
 
 function RecurrentContainer:setACGStep(step)
 	self.acg_step = step
+end
+
+function RecurrentContainer:getStepOutput(step, layer)
+	return self:net(step).output[layer or self.nlayer]
+end
+
+function RecurrentContainer:setStepGradOutputAdd(gradToAdd, step, layer)
+	if not self.gradOutputAdd[step] then
+		self.gradOutputAdd[step] = {}
+	end
+	if self.gradOutputAdd[step][layer or self.nlayer] then
+		self.gradOutputAdd[step][layer or self.nlayer]:add(gradToAdd)
+	else
+		self.gradOutputAdd[step][layer or self.nlayer] = gradToAdd
+	end
+end
+
+function RecurrentContainer:setInitStates(statein)
+	self.initStates = statein
+end
+
+function RecurrentContainer:getGradInitStates()
+	return self.gradInitStates
+end
+
+function RecurrentContainer:setLayerInitState(statein, layer)
+	self.initStates[layer or self.nlayer] = statein
+end
+
+function RecurrentContainer:getLayerGradInitState(layer)
+	return self.gradInitStates[layer or self.nlayer]
 end

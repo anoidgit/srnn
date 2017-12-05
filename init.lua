@@ -3,6 +3,13 @@ require('nn')
 require('nngraph')
 
 srnn = {} -- define the global srnn table
+srnn.units = {} -- prepare for units of RNNs
+
+require('srnn.units.getRNNUnit')
+require('srnn.units.getFastLSTMUnit')
+require('srnn.units.getLSTMPUnit')
+require('srnn.units.getVanillaLSTMUnit')
+require('srnn.units.getGRUUnit')
 
 require('srnn.ValueMinus')
 
