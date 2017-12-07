@@ -1,4 +1,4 @@
-local StepLSTMP, parent = torch.class('srnn.StepLSTMP', 'srnn.AbstractRecurrentCell')
+local StepLSTMP, parent = torch.class('srnn.StepLSTMP', 'srnn.AbstractCell')
 
 function StepLSTMP:buildStep(inputSize, outputSize, layers, dropout)
 

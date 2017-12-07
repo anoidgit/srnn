@@ -7,7 +7,7 @@ function test(bsize, isize, osize, nlayer, nstep, rs, tsfm)
 		table.insert(id, torch.randn(bsize, isize))
 		table.insert(gd, torch.randn(bsize, osize))
 	end
-	local tmod_core=srnn.StepRNN(isize, osize, nlayer)
+	local tmod_core=srnn.StepVanillaLSTM(isize, osize, nlayer)
 	local tmod=srnn.Sequencer(tmod_core, osize, nil, rs, tsfm)
 	tmod:evaluate()
 	for i = 1, 3 do
@@ -21,6 +21,18 @@ function test(bsize, isize, osize, nlayer, nstep, rs, tsfm)
 	tmod:accGradParameters(id, gd)
 	id=torch.randn(nstep, bsize, isize)
 	gd=torch.randn(nstep, bsize, osize)
+	tmod_core=srnn.StepVanillaLSTM(isize, osize, nlayer)
+	tmod=srnn.Sequencer(tmod_core, osize, nil, rs, tsfm)
+	tmod:evaluate()
+	for i = 1, 3 do
+		tmod:forward(id)
+	end
+	tmod:training()
+	tmod:forward(id)
+	tmod:backward(id, gd)
+	tmod:forward(id)
+	tmod:updateGradInput(id, gd)
+	tmod:accGradParameters(id, gd)
 end
 
 test(30, 29, 59, 1, 1)

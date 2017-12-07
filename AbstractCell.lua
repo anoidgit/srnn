@@ -1,6 +1,26 @@
-local AbstractRecurrentCell, parent = torch.class('srnn.AbstractRecurrentCell', 'srnn.RecurrentContainer')
+local AbstractCell, parent = torch.class('srnn.AbstractCell', 'srnn.RecurrentContainer')
 
-function AbstractRecurrentCell:prepareForward(input)
+function AbstractCell:__init(...)
+	local function prepareTensorTable(nTensor)
+		local rs = {}
+		for _ = 1, nTensor do
+			table.insert(rs, torch.Tensor())
+		end
+		return rs
+	end
+	parent.__init(self, ...)
+	if self.initStateStorage.weight then
+		self.initStateStorage.weight:resize(self.nlayer * 2, self.outputSize):zero()
+		self.initStateStorage.gradWeight:resize(self.nlayer * 2, self.outputSize):zero()
+	else
+		self.initStateStorage.weight = torch.zeros(self.nlayer * 2, self.outputSize)
+		self.initStateStorage.gradWeight = torch.zeros(self.nlayer * 2, self.outputSize)
+	end
+	self.gradOutputLast = prepareTensorTable(self.nlayer)
+	self.gradCellLast = prepareTensorTable(self.nlayer)
+end
+
+function AbstractCell:prepareForward(input)
 	local function reset_Table(tableIn, bsize, osize)
 		for _, unit in ipairs(tableIn) do
 			unit:resize(bsize, osize):zero()
@@ -27,45 +47,24 @@ function AbstractRecurrentCell:prepareForward(input)
 		reset_Table(self.gradOutputLast, bsize, self.outputSize)
 		reset_Table(self.gradCellLast, bsize, self.outputSize)
 		if #self.initStates > 1 then
-			pair_reset_Table(self.initStates, self.gradInitStates)
+			pair_reset_Table(self.initStates, self.gradInitStates, true)
 		end
 		self:resetStep(true, false)
 	end
 end
 
-function AbstractRecurrentCell:reset()
-	local function prepareTensorTable(nTensor)
-		local rs = {}
-		for _ = 1, nTensor do
-			table.insert(rs, torch.Tensor())
-		end
-		return rs
-	end
-	if self.gradOutputLast then
-		for _, unit in ipairs(self.gradOutputLast) do
+function AbstractCell:clearState()
+	local function resetTable(tbin)
+		for _, unit in ipairs(tbin) do
 			unit:set()
 		end
-	else
-		self.gradOutputLast = prepareTensorTable(self.nlayer)
 	end
-	if self.gradCellLast then
-		for _, unit in ipairs(self.gradCellLast) do
-			unit:set()
-		end
-	else
-		self.gradCellLast = prepareTensorTable(self.nlayer)
-	end
-	if self.initStateStorage.weight then
-		self.initStateStorage.weight:resize(self.nlayer * 2, self.outputSize):zero()
-		self.initStateStorage.gradWeight:resize(self.nlayer * 2, self.outputSize):zero()
-	else
-		self.initStateStorage.weight = torch.zeros(self.nlayer * 2, self.outputSize)
-		self.initStateStorage.gradWeight = torch.zeros(self.nlayer * 2, self.outputSize)
-	end
-	parent.reset(self)
+	resetTable(self.gradOutputLast)
+	resetTable(self.gradCellLast)
+	return parent.clearState(self)
 end
 
-function AbstractRecurrentCell:getInput(step, input)
+function AbstractCell:getInput(step, input)
 	if self.inputs[step] then
 		return self.inputs[step]
 	else
@@ -88,7 +87,7 @@ function AbstractRecurrentCell:getInput(step, input)
 	end
 end
 
-function AbstractRecurrentCell:getGradOutput(step, gradOutput, lastStep)
+function AbstractCell:getGradOutput(step, gradOutput, lastStep)
 	local function buildTable(tba, tbta)
 		for _, unit in ipairs(tbta) do
 			table.insert(tba, unit)
@@ -104,10 +103,8 @@ function AbstractRecurrentCell:getGradOutput(step, gradOutput, lastStep)
 			buildTable(_gradOutput, self.gradCellLast)
 		else
 			local _gt = self:net(step + 1).gradInput
-			for _, unit in ipairs(_gt) do
-				if _ > 1 then
-					table.insert(_gradOutput, unit)
-				end
+			for _ = 2, #_gt do
+				table.insert(_gradOutput, _gt[_])
 			end
 			-- assume that updateGradInput was called at first, while accGradParameters, gradOutput will not be added for a second time
 			if gradOutput then
@@ -126,11 +123,11 @@ function AbstractRecurrentCell:getGradOutput(step, gradOutput, lastStep)
 	end
 end
 
-function AbstractRecurrentCell:getStepCell(step, layer)
+function AbstractCell:getStepCell(step, layer)
 	return self:net(step).output[self.nlayer + (layer or self.nlayer)]
 end
 
-function AbstractRecurrentCell:setStepGradCellAdd(gradToAdd, step, layer)
+function AbstractCell:setStepGradCellAdd(gradToAdd, step, layer)
 	if not self.gradOutputAdd[step] then
 		self.gradOutputAdd[step] = {}
 	end
@@ -141,10 +138,10 @@ function AbstractRecurrentCell:setStepGradCellAdd(gradToAdd, step, layer)
 	end
 end
 
-function AbstractRecurrentCell:setLayerInitCellState(statein, layer)
+function AbstractCell:setLayerInitCellState(statein, layer)
 	self.initStates[self.nlayer + (layer or self.nlayer)] = statein
 end
 
-function AbstractRecurrentCell:getLayerGradInitCellState(layer)
+function AbstractCell:getLayerGradInitCellState(layer)
 	return self.gradInitStates[self.nlayer + (layer or self.nlayer)]
 end

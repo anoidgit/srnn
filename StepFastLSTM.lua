@@ -1,4 +1,4 @@
-local StepFastLSTM, parent = torch.class('srnn.StepFastLSTM', 'srnn.AbstractRecurrentCell')
+local StepFastLSTM, parent = torch.class('srnn.StepFastLSTM', 'srnn.AbstractCell')
 
 function StepFastLSTM:buildStep(inputSize, outputSize, layers, dropout)
 

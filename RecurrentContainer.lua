@@ -8,7 +8,16 @@ function RecurrentContainer:__init(inputSize, outputSize, layers, dropout, updat
 	self.initStateStorage = nn.Module()
 	self:add(self.initStateStorage)
 	self.updateInit = (updateInit == nil) and true or updateInit
-	self:reset()
+	self.fwd_step = 1
+	self.ugi_step = 1
+	self.acg_step = 1
+	self.inputs = {}
+	self.gradOutputs = {}
+	self.gradOutputAdd = {}
+	self.initStates = {}
+	self.gradInitStates = {}
+	self.forwarded = false
+	self.backwarded = true
 	self:training()
 end
 
@@ -117,24 +126,19 @@ function RecurrentContainer:evaluate()
 	parent.evaluate(self)
 end
 
-function RecurrentContainer:reset()
-	self:resetStep()
-	parent.reset(self)
-end
-
 function RecurrentContainer:clearState()
 	self:resetStep(nil, nil, true)
 	return parent.clearState(self)
 end
 
-function RecurrentContainer:resetStep(fwd, bwd, clearInitStates)
+function RecurrentContainer:resetStep(fwd, bwd)
 	self.fwd_step = 1
 	self.ugi_step = 1
 	self.acg_step = 1
 	self.inputs = {}
 	self.gradOutputs = {}
 	self.gradOutputAdd = {}
-	if (clearInitStates == nil) and false or clearInitStates then
+	if not self.train then
 		self.initStates = {}
 	end
 	self.gradInitStates = {}

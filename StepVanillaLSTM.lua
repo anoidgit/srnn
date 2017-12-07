@@ -1,4 +1,4 @@
-local StepVanillaLSTM, parent = torch.class('srnn.StepVanillaLSTM', 'srnn.AbstractRecurrentCell')
+local StepVanillaLSTM, parent = torch.class('srnn.StepVanillaLSTM', 'srnn.AbstractCell')
 
 function StepVanillaLSTM:buildStep(inputSize, outputSize, layers, dropout)
 

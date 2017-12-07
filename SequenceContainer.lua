@@ -4,7 +4,7 @@ function SequenceContainer:__init(module, shareModule)
 	parent.__init(self)
 	self.network = module
 	self:add(module)
-	self:clearState()
+	self.nets = {}
 	self:training()
 	self.shareModule = shareModule
 end
@@ -168,11 +168,6 @@ end
 function SequenceContainer:evaluate()
 	self:net(1):evaluate()
 	parent.evaluate(self)
-end
-
-function SequenceContainer:reset()
-	self.nets = {}
-	parent.reset(self)
 end
 
 function SequenceContainer:clearState()
